@@ -26,7 +26,7 @@ def preprocess_celebA_data(data_dir='./img_align_celeba/'):
         imageio.imwrite(data_dir  + fname + '.jpg', im)
     return
 
-def get_celebA_data(train=False, test=True, train_data_dir='img_align_celeba/train/data/', test_data_dir='img_align_celeba/test/data/'):
+def get_celebA_data(train=False, test=True, train_data_dir='../img_align_celeba/train/data/', test_data_dir='testing_images/celebA/data/'):
 
     if train:
         x_train = np.zeros((160000, 64,64, 3),dtype=np.float32)
@@ -39,11 +39,11 @@ def get_celebA_data(train=False, test=True, train_data_dir='img_align_celeba/tra
         return x_train
 
     else:
-        x_test = np.zeros((10000, 64,64, 3),dtype=np.float32)
+        x_test = np.zeros((64, 64,64, 3),dtype=np.float32)
 
-        for i in range(190000,200000):
+        for i in range(182638,182702):
             fname = str(i)
             fname = fname.zfill(6)
-            x_test[i-190000] = (image.imread(test_data_dir + fname + '.jpg')).reshape((64,64,3))/255.
+            x_test[i-182638] = (image.imread(test_data_dir + fname + '.jpg')).reshape((64,64,3))/255.
 
         return x_test
