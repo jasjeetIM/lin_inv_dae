@@ -28,8 +28,8 @@ def estimate_ipt_celebA(A, A_T, y, autoencoder, iterations, visualize=False, x=N
                     ax.get_yaxis().set_visible(False)
 
                 #Show recovered image at iteration j
-                if j % 1== 0 and j > 1:
-                    ax = plt.subplot(1, 20, j/1 + 1)
+                if j % int(iterations/10)== 0 and j > 1:
+                    ax = plt.subplot(1, 20, j/int(iterations/10) + 1)
                     plt.imshow(x_t.reshape(64,64,3))
                     ax.get_xaxis().set_visible(False)
                     ax.get_yaxis().set_visible(False)
@@ -44,22 +44,84 @@ def estimate_ipt_celebA(A, A_T, y, autoencoder, iterations, visualize=False, x=N
         
         return x_final, time_diff
 
+def estimate_ipt_mnist(A, A_T, y, autoencoder, iterations, visualize=False, x=None): 
+        
+        if visualize and x is not None: 
+            plt.figure(figsize=(20, 2))
+ 
+        x_t = np.random.normal(0., 1, (784,))
+        x_final = np.zeros((28,28,1))
+        
+        start_time = time.time()
+        # WARNING: Visualization logic is hardcoded to the value 10, 
+        #  if you change iterations , visualization logic will need to be changed too
+        for j in range(iterations):
+            v_t = x_t - np.dot(A_T, np.dot(A,x_t) - y)
+            x_t = autoencoder.predict(v_t.reshape(1,28,28,1))
+            
+            if visualize and x is not None:
+            #Print original image
+                if j == 0:
+                    ax = plt.subplot(1, 20, j / 1 + 1)
+                    plt.imshow(x.reshape((28,28)))
+                    plt.gray()
+                    ax.get_xaxis().set_visible(False)
+                    ax.get_yaxis().set_visible(False)
 
-def get_super_resol_A(factor):
-    A = np.zeros(shape=(int(64/factor)**2*3, 64*64*3))
-    l = 0
-    for i in range(int(64/factor)):
-        for j in range(int(64/factor)):
-            for k in range(3):
-                a = np.zeros(shape=(64, 64, 3))
-                a[factor*i:factor*(i+1), factor*j:factor*(j+1), k] = 1.0/factor**2
+                #Show recovered image at iteration j
+                if j % int(iterations/10)== 0 and j > 1:
+                    ax = plt.subplot(1, 20, j/int(iterations/10) + 1)
+                    plt.imshow(x_t.reshape((28,28)))
+                    plt.gray()
+                    ax.get_xaxis().set_visible(False)
+                    ax.get_yaxis().set_visible(False)
+
+            x_t = x_t.reshape((784,))
+            if j == iterations -1:
+                time_diff = time.time() - start_time #time to run 10 iterations 
+                x_final = x_t.reshape((28,28))
+        
+        if visualize:
+            plt.show() 
+        
+        return x_final, time_diff
+
+
+
+def get_super_resol_A(factor, dataset='celebA'):
+    if dataset == 'celebA':
+        A = np.zeros(shape=(int(64/factor)**2*3, 64*64*3))
+        l = 0
+        for i in range(int(64/factor)):
+            for j in range(int(64/factor)):
+                for k in range(3):
+                    a = np.zeros(shape=(64, 64, 3))
+                    a[factor*i:factor*(i+1), factor*j:factor*(j+1), k] = 1.0/factor**2
+                    A[l, :] = np.reshape(a, [1, -1])
+                    l += 1
+        return A
+    else:
+        A = np.zeros(shape=(int(28/factor)**2, 28*28))
+        l = 0
+        for i in range(int(28/factor)):
+            for j in range(int(28/factor)):
+                a = np.zeros(shape=(28, 28))
+                a[factor*i:factor*(i+1), factor*j:factor*(j+1)] = 1.0/factor**2
                 A[l, :] = np.reshape(a, [1, -1])
                 l += 1
-    return A
+        return A
+        
 
-def get_inpaint_A(mask_size):
-    A = np.ones((3, 64, 64))
-    A[:, int(64/2 - mask_size/2):int(64/2 + mask_size/2), int(64/2 - mask_size/2):int(64/2 + mask_size/2)] = 0
-    A = A.reshape(-1)
-    A = np.diag(A)
+def get_inpaint_A(mask_size, dataset='celebA'):
+    if dataset == 'celebA':
+        A = np.ones((64, 64,3))
+        A[int(64/2 - mask_size/2):int(64/2 + mask_size/2), int(64/2 - mask_size/2):int(64/2 + mask_size/2),:] = 0
+        A = A.reshape(-1)
+        A = np.diag(A)
+    else:
+        A = np.ones((28,28))
+        A[int(28/2 - mask_size/2):int(28/2 + mask_size/2), int(28/2 - mask_size/2):int(28/2 + mask_size/2)] = 0
+        A = A.reshape(-1)
+        A = np.diag(A)
+        
     return A
